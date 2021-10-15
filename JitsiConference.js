@@ -1320,12 +1320,15 @@ JitsiConference.prototype._sendNewVideoType = function(track) {
 
 JitsiConference.prototype._setTrackMuteStatus = function(localTrack, isMuted) {
     if (FeatureFlags.isSourceNameSignalingEnabled()) {
+        // TODO When legacy signaling part is removed, remember to adjust signalingLayer.setTrackMuteStatus, so that
+        // it triggers sending the presence (it only updates it for now, because the legacy code below sends).
         this._signalingLayer.setTrackMuteStatus(
             getSourceNameForJitsiTrack(this.myUserId(), localTrack.getType(), 0),
-            localTrack.getType(),
             isMuted
         );
-    } else if (localTrack.isAudioTrack()) {
+    }
+
+    if (localTrack.isAudioTrack()) {
         this.room && this.room.setAudioMute(isMuted);
     } else {
         this.room && this.room.setVideoMute(isMuted);

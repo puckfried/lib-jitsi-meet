@@ -83,16 +83,14 @@ describe('SignalingLayerImpl', () => {
                 const audioSourceName = getSourceNameForJitsiTrack(endpointId, MediaType.AUDIO, 0);
 
                 // Audio track: muted
-                signalingLayer.setTrackMuteStatus(audioSourceName, MediaType.AUDIO, true);
-                expect(chatRoom.setAudioMute).toHaveBeenCalledWith(true); // Legacy call (to be removed eventually)
+                signalingLayer.setTrackMuteStatus(audioSourceName, true);
                 expect(chatRoom.addOrReplaceInPresence)
                     .toHaveBeenCalledWith(
                         SOURCE_INFO_PRESENCE_ELEMENT,
                         { value: `{"${audioSourceName}":{"muted":true}}` });
 
                 // Audio track: unmuted
-                signalingLayer.setTrackMuteStatus(audioSourceName, MediaType.AUDIO, false);
-                expect(chatRoom.setAudioMute).toHaveBeenCalledWith(false); // Legacy call (to be removed eventually)
+                signalingLayer.setTrackMuteStatus(audioSourceName, false);
                 expect(chatRoom.addOrReplaceInPresence)
                     .toHaveBeenCalledWith(
                         SOURCE_INFO_PRESENCE_ELEMENT,
@@ -102,16 +100,14 @@ describe('SignalingLayerImpl', () => {
                 const videoSourceName = getSourceNameForJitsiTrack(endpointId, MediaType.VIDEO, 0);
 
                 // Video track: muted
-                signalingLayer.setTrackMuteStatus(videoSourceName, MediaType.VIDEO, true);
-                expect(chatRoom.setVideoMute).toHaveBeenCalledWith(true); // Legacy call (to be removed eventually)
+                signalingLayer.setTrackMuteStatus(videoSourceName, true);
                 expect(chatRoom.addOrReplaceInPresence)
                     .toHaveBeenCalledWith(
                         SOURCE_INFO_PRESENCE_ELEMENT,
                         { value: `{"${videoSourceName}":{"muted":true}}` });
 
                 // Video track: unmuted
-                signalingLayer.setTrackMuteStatus(videoSourceName, MediaType.VIDEO, false);
-                expect(chatRoom.setVideoMute).toHaveBeenCalledWith(false); // Legacy call (to be removed eventually)
+                signalingLayer.setTrackMuteStatus(videoSourceName, false);
                 expect(chatRoom.addOrReplaceInPresence)
                     .toHaveBeenCalledWith(
                         SOURCE_INFO_PRESENCE_ELEMENT,

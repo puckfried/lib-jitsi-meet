@@ -329,11 +329,10 @@ export default class SignalingLayerImpl extends SignalingLayer {
      * Adjusts muted status of given track.
      *
      * @param {SourceName} sourceName - the name of the track's source.
-     * @param {MediaType} mediaType - the track's media type.
      * @param {boolean} muted - the new muted status.
      * @returns {boolean}
      */
-    setTrackMuteStatus(sourceName, mediaType, muted) {
+    setTrackMuteStatus(sourceName, muted) {
         if (!this._localSourceState[sourceName]) {
             this._localSourceState[sourceName] = {};
         }
@@ -341,19 +340,10 @@ export default class SignalingLayerImpl extends SignalingLayer {
         this._localSourceState[sourceName].muted = muted;
 
         if (this.chatRoom) {
+            // FIXME This only adjusts the presence, but doesn't actually send it. Here we temporarily rely on
+            // the legacy signaling part to send the presence. Remember to add "send presence" here when the legacy
+            // signaling is removed.
             this._addLocalSourceInfoToPresence();
-
-            // Update also the legacy signaling.
-            // TODO Remove once legacy signaling is deprecated.
-            // TODO With legacy signaling also remove the media type argument from this method,
-            // because it's only needed for the logic below.
-            // When this section is removed remember to add a call which sends the actual presence, because right now
-            // it's done by chatRoom.setAudioMute/chatRoom.setVideoMute.
-            if (mediaType === MediaType.AUDIO) {
-                this.chatRoom.setAudioMute(muted);
-            } else {
-                this.chatRoom.setVideoMute(muted);
-            }
         }
     }
 
