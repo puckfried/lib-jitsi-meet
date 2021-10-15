@@ -373,32 +373,48 @@ describe('SignalingLayerImpl', () => {
             });
         });
     });
-    it('will remove source info when participant leaves', () => {
-        FeatureFlags.init({ sourceNameSignaling: true });
-
-        const signalingLayer = new SignalingLayerImpl();
-        const chatRoom = createMockChatRoom();
-
-        signalingLayer.setChatRoom(chatRoom);
-
+    describe('will remove source info(cleanup corner cases)', () => {
+        let signalingLayer;
+        let chatRoom;
         const endpointId = '12345678';
-        const sourceInfo = {
-            '12345678-v0': {
-                muted: false,
-                videoType: 'desktop'
-            }
-        };
 
-        chatRoom.mockSourceInfoPresence(endpointId, sourceInfo);
+        beforeEach(() => {
+            FeatureFlags.init({ sourceNameSignaling: true });
 
-        expect(signalingLayer.getPeerMediaInfo(endpointId, MediaType.VIDEO)).toBeDefined();
+            signalingLayer = new SignalingLayerImpl();
+            chatRoom = createMockChatRoom();
 
-        chatRoom.emitParticipantLeft(endpointId);
+            signalingLayer.setChatRoom(chatRoom);
+        });
+        it('when participant leaves', () => {
+            const sourceInfo = {
+                '12345678-v0': {
+                    muted: false,
+                    videoType: 'desktop'
+                }
+            };
 
-        // Default value means that the source info was removed when the participant has left
-        expect(signalingLayer.getPeerMediaInfo(endpointId, MediaType.VIDEO)).toEqual({
-            muted: true,
-            videoType: undefined
+            chatRoom.mockSourceInfoPresence(endpointId, sourceInfo);
+
+            expect(signalingLayer.getPeerSourceInfo(endpointId, '12345678-v0')).toBeDefined();
+
+            chatRoom.emitParticipantLeft(endpointId);
+
+            expect(signalingLayer.getPeerSourceInfo(endpointId, '12345678-v0')).toBeUndefined();
+        });
+        it('when it\'s no longer in the presence', () => {
+            chatRoom.mockSourceInfoPresence(endpointId, {
+                '12345678-v0': { muted: false }
+            });
+
+            expect(signalingLayer.getPeerSourceInfo(endpointId, '12345678-v0')).toBeDefined();
+
+            chatRoom.mockSourceInfoPresence(endpointId, {
+                '12345678-v1': { muted: false }
+            });
+
+            expect(signalingLayer.getPeerSourceInfo(endpointId, '12345678-v0')).toBeUndefined();
+            expect(signalingLayer.getPeerSourceInfo(endpointId, '12345678-v1')).toBeDefined();
         });
     });
 });

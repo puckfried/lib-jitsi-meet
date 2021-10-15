@@ -90,8 +90,20 @@ export default class SignalingLayer extends Listenable {
      * @return {PeerMediaInfo|null} presenceInfo an object with media presence
      * info or <tt>null</tt> either if there is no presence available for given
      * JID or if the media type given is invalid.
+     *
+     * @deprecated This method is to be replaced with getPeerSourceInfo.
      */
     getPeerMediaInfo(owner, mediaType) { // eslint-disable-line no-unused-vars
+        throw new Error('not implemented');
+    }
+
+    /**
+     * Obtains the info about a source for given name and endpoint ID.
+     * @param {EndpointId} owner - The owner's endpoint ID.
+     * @param {SourceName} sourceName - The name of the source for which the info is to be obtained.
+     * @returns {SourceInfo | undefined}
+     */
+    getPeerSourceInfo(owner, sourceName) { // eslint-disable-line no-unused-vars
         throw new Error('not implemented');
     }
 }

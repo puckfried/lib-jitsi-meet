@@ -50,7 +50,6 @@ export default class SignalingLayerImpl extends SignalingLayer {
         this._localSourceState = { };
 
         /**
-         * TODO the map is not cleaned up when sources are removed
          * @type {Map<EndpointId, Map<SourceName, SourceInfo>>}
          * @private
          */
@@ -197,6 +196,15 @@ export default class SignalingLayerImpl extends SignalingLayer {
                             emitEventsFromHere && emitVideoTypeEvent(endpointId, newVideoType);
                         }
                     }
+
+                    // Cleanup removed source names
+                    const newSourceNames = Object.keys(sourceInfoJSON);
+
+                    for (const sourceName of Object.keys(endpointSourceState)) {
+                        if (newSourceNames.indexOf(sourceName) === -1) {
+                            delete endpointSourceState[sourceName];
+                        }
+                    }
                 };
                 room.addPresenceListener('SourceInfo', this._sourceInfoHandler);
 
@@ -288,6 +296,13 @@ export default class SignalingLayerImpl extends SignalingLayer {
         }
 
         return legacyGetPeerMediaInfo();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    getPeerSourceInfo(owner, sourceName) {
+        return this._remoteSourceState[owner] ? this._remoteSourceState[owner][sourceName] : undefined;
     }
 
     /**
