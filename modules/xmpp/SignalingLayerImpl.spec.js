@@ -2,7 +2,9 @@ import * as MediaType from '../../service/RTC/MediaType';
 import * as SignalingEvents from '../../service/RTC/SignalingEvents';
 import { getSourceNameForJitsiTrack } from '../../service/RTC/SignalingLayer';
 import VideoType from '../../service/RTC/VideoType';
+import XMPPEvents from '../../service/xmpp/XMPPEvents';
 import FeatureFlags from '../flags/FeatureFlags';
+import Listenable from '../util/Listenable';
 
 import SignalingLayerImpl, { SOURCE_INFO_PRESENCE_ELEMENT } from './SignalingLayerImpl';
 
@@ -10,11 +12,14 @@ const INITIAL_SOURCE_INFO = { value: JSON.stringify({}) };
 
 // eslint-disable-next-line require-jsdoc
 function createMockChatRoom() {
-    const chatRoom = jasmine.createSpyObj('', [
-        'addOrReplaceInPresence',
-        'setAudioMute',
-        'setVideoMute'
-    ]);
+    const chatRoom = {
+        ...new Listenable(),
+        ...jasmine.createSpyObj('', [
+            'addOrReplaceInPresence',
+            'setAudioMute',
+            'setVideoMute'
+        ])
+    };
 
     const listeners = {};
 
@@ -45,6 +50,11 @@ function createMockChatRoom() {
             tagName: SOURCE_INFO_PRESENCE_ELEMENT,
             value: JSON.stringify(sourceInfo)
         }, endpointId);
+    };
+
+    chatRoom.emitParticipantLeft = endpointId => {
+        // Only the resource part (MUC nick) is relevant
+        chatRoom.eventEmitter.emit(XMPPEvents.MUC_MEMBER_LEFT, `room@server.com/${endpointId}`);
     };
 
     return chatRoom;
@@ -249,7 +259,7 @@ describe('SignalingLayerImpl', () => {
 
                 expect(videoPeerMediaInfo).toEqual({
                     muted: true,
-                    videoType: 'camera'
+                    videoType: undefined
                 });
             });
             describe('will read from SourceInfo if available', () => {
@@ -361,6 +371,34 @@ describe('SignalingLayerImpl', () => {
 
                 expect(peerMediaInfo).toEqual(legacyMediaInfoValue);
             });
+        });
+    });
+    it('will remove source info when participant leaves', () => {
+        FeatureFlags.init({ sourceNameSignaling: true });
+
+        const signalingLayer = new SignalingLayerImpl();
+        const chatRoom = createMockChatRoom();
+
+        signalingLayer.setChatRoom(chatRoom);
+
+        const endpointId = '12345678';
+        const sourceInfo = {
+            '12345678-v0': {
+                muted: false,
+                videoType: 'desktop'
+            }
+        };
+
+        chatRoom.mockSourceInfoPresence(endpointId, sourceInfo);
+
+        expect(signalingLayer.getPeerMediaInfo(endpointId, MediaType.VIDEO)).toBeDefined();
+
+        chatRoom.emitParticipantLeft(endpointId);
+
+        // Default value means that the source info was removed when the participant has left
+        expect(signalingLayer.getPeerMediaInfo(endpointId, MediaType.VIDEO)).toEqual({
+            muted: true,
+            videoType: undefined
         });
     });
 });

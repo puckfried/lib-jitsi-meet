@@ -1,11 +1,13 @@
 /* global __filename */
 
 import { getLogger } from 'jitsi-meet-logger';
+import { Strophe } from 'strophe.js';
 
 import * as MediaType from '../../service/RTC/MediaType';
 import * as SignalingEvents from '../../service/RTC/SignalingEvents';
 import SignalingLayer, { getMediaTypeFromSourceName } from '../../service/RTC/SignalingLayer';
 import VideoType from '../../service/RTC/VideoType';
+import XMPPEvents from '../../service/xmpp/XMPPEvents';
 import FeatureFlags from '../flags/FeatureFlags';
 
 import { filterNodeFromPresenceJSON } from './ChatRoom';
@@ -48,7 +50,7 @@ export default class SignalingLayerImpl extends SignalingLayer {
         this._localSourceState = { };
 
         /**
-         * TODO the map is not cleaned up neither when participants leave, nor when sources are removed
+         * TODO the map is not cleaned up when sources are removed
          * @type {Map<EndpointId, Map<SourceName, SourceInfo>>}
          * @private
          */
@@ -100,6 +102,9 @@ export default class SignalingLayerImpl extends SignalingLayer {
             this._sourceInfoHandler
                 && oldChatRoom.removePresenceListener(
                     SOURCE_INFO_PRESENCE_ELEMENT, this._sourceInfoHandler);
+            this._memberLeftHandler
+                && oldChatRoom.removeEventListener(
+                    XMPPEvents.MUC_MEMBER_LEFT, this._memberLeftHandler);
         }
         if (room) {
             const emitAudioMutedEvent = (endpointId, muted) => {
@@ -195,6 +200,14 @@ export default class SignalingLayerImpl extends SignalingLayer {
                 };
                 room.addPresenceListener('SourceInfo', this._sourceInfoHandler);
 
+                this._memberLeftHandler = jid => {
+                    const endpointId = Strophe.getResourceFromJid(jid);
+
+                    delete this._remoteSourceState[endpointId];
+                };
+
+                room.addEventListener(XMPPEvents.MUC_MEMBER_LEFT, this._memberLeftHandler);
+
                 this._addLocalSourceInfoToPresence();
             }
         }
@@ -253,11 +266,14 @@ export default class SignalingLayerImpl extends SignalingLayer {
             const mediaInfo = {};
             const endpointMediaSource = this._findEndpointSourceInfoForMediaType(owner, mediaType);
 
+            // The defaults are provided only, because getPeerMediaInfo is a legacy method. This will be eventually
+            // changed into a getSourceInfo method which returns undefined if there's no source. Also there will be
+            // no mediaType argument there.
             if (mediaType === MediaType.AUDIO) {
                 mediaInfo.muted = endpointMediaSource ? endpointMediaSource.muted : true;
             } else if (mediaType === MediaType.VIDEO) {
                 mediaInfo.muted = endpointMediaSource ? endpointMediaSource.muted : true;
-                mediaInfo.videoType = endpointMediaSource ? endpointMediaSource.videoType : VideoType.CAMERA;
+                mediaInfo.videoType = endpointMediaSource ? endpointMediaSource.videoType : undefined;
 
                 const codecTypeNode = filterNodeFromPresenceJSON(lastPresence, 'jitsi_participant_codecType');
 
