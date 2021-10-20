@@ -2,10 +2,22 @@
 
 const options = {
     hosts: {
-        domain: 'jitsi-meet.example.com',
-        muc: 'conference.jitsi-meet.example.com'
+        domain: 'meet.jit.si',
+        muc: 'conference.meet.jit.si',
+        focus: 'focus.meet.jit.si'
     },
-    bosh: '//jitsi-meet.example.com/http-bind'
+    externalConnectUrl: 'https://meet.jit.si/http-pre-bind', 
+    enableP2P: true, 
+    p2p: { 
+       enabled: true, 
+       preferH264: true, 
+       disableH264: true, 
+       useStunTurn: true,
+    }, 
+    useStunTurn: true, 
+    bosh: `https://meet.jit.si/http-bind?room=pucktesttest`, 
+    websocket: 'wss://meet.jit.si/xmpp-websocket', 
+    clientNode: 'http://jitsi.org/jitsimeet', 
 };
 
 const confOptions = {
